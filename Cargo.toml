@@ -1,0 +1,12 @@
+[package]
+name = "lcf-explorer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.32.0"
+egui = "0.32.0"
+egui_ltreeview = "0.5.3"
+encoding_rs = "0.8.35"
+lcf = "0.1.0"
+rfd = "0.15.4"
