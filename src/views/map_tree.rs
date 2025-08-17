@@ -1,28 +1,23 @@
 use lcf::{
-    helpers::{Array, Chunk, Number, ToChunkID},
+    helpers::{Array, Chunk, Number},
     lmt::{bgm::MapBGM, map::MapChunk, start::StartChunk},
 };
 
 pub fn update(
     map_tree: &lcf::lmt::LcfMapTree,
-    builder: &mut egui_ltreeview::TreeViewBuilder<'_, String>,
+    builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
-    update_maps(&map_tree.maps, builder, encoding);
-
-    builder.dir("order".to_string(), "Order");
+    builder.leaf(0, format!("Active: {}", map_tree.active.0));
+    builder.dir(1, "Order");
     for (index, id) in map_tree.order.iter().enumerate() {
-        builder.leaf(format!("order-{}", id.0), format!("{index}: {}", id.0));
+        builder.leaf(2 + index as u64, format!("{index}: {}", id.0));
     }
     builder.close_dir();
 
-    builder.leaf(
-        "active".to_string(),
-        format!("Active: {}", map_tree.active.0),
-    );
-
-    builder.dir("start".to_string(), "Start");
-    for chunk in &map_tree.start.inner_vec {
+    let node = 1 << 16;
+    builder.dir(node, "Start");
+    for (index, chunk) in map_tree.start.inner_vec.iter().enumerate() {
         let label = match &chunk.data {
             StartChunk::PartyMapID(val) => format!("Party Map ID: {}", val.0),
             StartChunk::PartyX(val) => format!("Party X: {}", val.0),
@@ -40,21 +35,26 @@ pub fn update(
                 format!("Field {}: [{:?}]", id.0, bytes)
             }
         };
-        builder.leaf(format!("start-{}", chunk.data.id().0), label);
+        builder.leaf(node + 1 + index as u64, label);
     }
     builder.close_dir();
+
+    update_maps(&map_tree.maps, builder, encoding);
 }
 
 pub fn update_maps(
     maps: &[(Number, Array<Chunk<MapChunk>>)],
-    builder: &mut egui_ltreeview::TreeViewBuilder<'_, String>,
+    builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
-    builder.dir("maps".to_string(), "Maps");
-    for (id, chunks) in maps {
-        builder.dir(format!("map-{}", id.0), format!("Map {}", id.0));
-        for chunk in &chunks.inner_vec {
-            let node = move || format!("map-{}-chunk-{}", id.0, chunk.data.id().0);
+    let node = 2 << 16;
+    builder.dir(node, "Maps");
+    for (index, (id, chunks)) in maps.into_iter().enumerate() {
+        let node = node + 1 + index as u64;
+        builder.dir(node, format!("Map {}", id.0));
+        let node = node << 8;
+        for (index, chunk) in chunks.inner_vec.iter().enumerate() {
+            let node = node + index as u64;
             match &chunk.data {
                 MapChunk::AreaRange {
                     begin_x,
@@ -62,17 +62,18 @@ pub fn update_maps(
                     end_x,
                     end_y,
                 } => {
-                    builder.dir(node(), "Area Range");
-                    let node = node();
-                    builder.leaf(format!("{node}-1"), format!("Begin X: {begin_x}"));
-                    builder.leaf(format!("{node}-2"), format!("Begin Y: {begin_y}"));
-                    builder.leaf(format!("{node}-3"), format!("End X: {end_x}"));
-                    builder.leaf(format!("{node}-4"), format!("End Y: {end_y}"));
+                    builder.dir(node, "Area Range");
+                    let node = node << 2;
+                    builder.leaf(node, format!("Begin X: {begin_x}"));
+                    builder.leaf(node + 1, format!("Begin Y: {begin_y}"));
+                    builder.leaf(node + 2, format!("End X: {end_x}"));
+                    builder.leaf(node + 3, format!("End Y: {end_y}"));
                     builder.close_dir();
                 }
                 MapChunk::BGMData(chunks) => {
-                    builder.dir(node(), "BGM Data");
-                    for chunk in &chunks.inner_vec {
+                    builder.dir(node, "BGM Data");
+                    let node = node << 4;
+                    for (index, chunk) in chunks.inner_vec.iter().enumerate() {
                         let label = match &chunk.data {
                             MapBGM::FileName(bytes) => {
                                 format!("File Name: {}", encoding.to_encoding().decode(bytes).0)
@@ -91,7 +92,7 @@ pub fn update_maps(
                                 format!("Field {}: {:?}", id.0, bytes)
                             }
                         };
-                        builder.leaf(format!("{}-{}", node(), chunk.data.id().0), label)
+                        builder.leaf(node + index as u64, label)
                     }
                     builder.close_dir();
                 }
@@ -126,7 +127,7 @@ pub fn update_maps(
                         }
                         MapChunk::BGMData(_) | MapChunk::AreaRange { .. } => unreachable!(),
                     };
-                    builder.leaf(node(), label);
+                    builder.leaf(node, label);
                 }
             };
         }

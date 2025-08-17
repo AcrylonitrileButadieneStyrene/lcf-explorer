@@ -44,17 +44,19 @@ impl eframe::App for App {
 
         if !self.lcfs.is_empty() {
             egui::TopBottomPanel::top("tab bar").show(ctx, |ui| {
-                for (index, (name, _)) in self.lcfs.iter().enumerate() {
-                    if ui
-                        .radio(
-                            self.selected.map_or_default(|selected| selected == index),
-                            name,
-                        )
-                        .clicked()
-                    {
-                        self.selected = Some(index);
+                ui.horizontal(|ui| {
+                    for (index, (name, _)) in self.lcfs.iter().enumerate() {
+                        if ui
+                            .radio(
+                                self.selected.map_or_default(|selected| selected == index),
+                                name,
+                            )
+                            .clicked()
+                        {
+                            self.selected = Some(index);
+                        }
                     }
-                }
+                });
             });
         }
 
