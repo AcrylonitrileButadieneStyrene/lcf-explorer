@@ -53,7 +53,7 @@ pub fn update(
             }
             LcfMapUnitChunk::Events { chunks } => {
                 builder.dir(node, "Events");
-                let node = node << 14;
+                let node = node << 4;
                 for (index, (id, events)) in chunks.into_iter().enumerate() {
                     let node = node + index as u64;
                     builder.dir(node, format!("Event {}", id.0));
@@ -180,26 +180,22 @@ pub fn update(
                                                     _ => "Unknown",
                                                 }
                                             ),
-                                            EventPageChunk::InstructionsSize(val) => {
-                                                format!("Instruction byte size: {}", val.0)
+                                            EventPageChunk::CommandsSize(val) => {
+                                                format!("Commands size: {}", val.0)
                                             }
-                                            EventPageChunk::Instructions(instructions) => {
-                                                builder.dir(node, "Instructions");
-                                                for (index, instruction) in
-                                                    instructions.iter().enumerate()
+                                            EventPageChunk::Commands(commands) => {
+                                                builder.dir(node, "Commands");
+                                                for (index, command) in commands.iter().enumerate()
                                                 {
                                                     builder.leaf(
-                                                        node << 8 + index as u64,
+                                                        node.unbounded_shl(8) + index as u64,
                                                         format!(
-                                                            "{index}: {}{} {:?} {}",
-                                                            "    ".repeat(
-                                                                instruction.indent.0 as usize
-                                                            ),
-                                                            instruction.code.0,
-                                                            instruction.args,
+                                                            "{index}: {}{:?} {}",
+                                                            "\t".repeat(command.indent.0 as usize),
+                                                            command.instruction,
                                                             encoding
                                                                 .to_encoding()
-                                                                .decode(&instruction.string)
+                                                                .decode(&command.string)
                                                                 .0,
                                                         ),
                                                     );
