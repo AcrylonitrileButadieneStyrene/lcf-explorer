@@ -1,6 +1,8 @@
+use lcf::raw::RawLcf;
+
 pub struct App {
     selected: Option<usize>,
-    lcfs: Vec<(String, lcf::Lcf)>,
+    lcfs: Vec<(String, RawLcf)>,
     encoding: crate::code_page::CodePage,
 }
 
@@ -25,7 +27,7 @@ impl eframe::App for App {
                     {
                         let bytes = std::fs::read(&path).unwrap();
                         let mut cursor = std::io::Cursor::new(bytes);
-                        let lcf = lcf::Lcf::read(&mut cursor).unwrap();
+                        let lcf = RawLcf::read(&mut cursor).unwrap();
                         self.lcfs
                             .push((path.file_name().unwrap().to_str().unwrap().to_owned(), lcf));
                         self.selected = Some(self.lcfs.len() - 1);
@@ -66,22 +68,22 @@ impl eframe::App for App {
                 egui::ScrollArea::both().show(ui, |ui| {
                     egui_ltreeview::TreeView::new("tree".into()).show(ui, |mut builder| {
                         match lcf {
-                            lcf::Lcf::DataBase(database) => crate::views::database::update(
+                            RawLcf::RawDataBase(database) => crate::views::database::update(
                                 database,
                                 &mut builder,
                                 self.encoding,
                             ),
-                            lcf::Lcf::MapTree(lcf_map_tree) => crate::views::map_tree::update(
+                            RawLcf::RawMapTree(lcf_map_tree) => crate::views::map_tree::update(
                                 lcf_map_tree,
                                 &mut builder,
                                 self.encoding,
                             ),
-                            lcf::Lcf::MapUnit(lcf_map_unit) => crate::views::map_unit::update(
+                            RawLcf::RawMapUnit(lcf_map_unit) => crate::views::map_unit::update(
                                 lcf_map_unit,
                                 &mut builder,
                                 self.encoding,
                             ),
-                            lcf::Lcf::SaveData(lcf_save_data) => crate::views::save_data::update(
+                            RawLcf::RawSaveData(lcf_save_data) => crate::views::save_data::update(
                                 lcf_save_data,
                                 &mut builder,
                                 self.encoding,

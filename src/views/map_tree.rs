@@ -1,10 +1,10 @@
 use lcf::{
     helpers::{Array, Chunk, Number},
-    lmt::{bgm::MapBGM, map::MapChunk, start::StartChunk},
+    raw::lmt::{RawLcfMapTree, bgm::MapBGM, map::MapChunk, start::StartChunk},
 };
 
 pub fn update(
-    map_tree: &lcf::lmt::LcfMapTree,
+    map_tree: &RawLcfMapTree,
     builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {

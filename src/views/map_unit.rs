@@ -1,5 +1,5 @@
-use lcf::lmu::{
-    LcfMapUnit, LcfMapUnitChunk,
+use lcf::raw::lmu::{
+    LcfMapUnitChunk, RawLcfMapUnit,
     event::{
         EventChunk, move_route::EventMoveRouteChunk, page::EventPageChunk,
         trigger::EventTriggerChunk,
@@ -7,7 +7,7 @@ use lcf::lmu::{
 };
 
 pub fn update(
-    map_unit: &LcfMapUnit,
+    map_unit: &RawLcfMapUnit,
     builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
@@ -226,10 +226,10 @@ pub fn update(
                 continue;
             }
             LcfMapUnitChunk::Lower(layer) => {
-                format!("Lower: {:?}", layer.inner_vec)
+                format!("Lower: {layer:?}")
             }
             LcfMapUnitChunk::Upper(layer) => {
-                format!("Upper: {:?}", layer.inner_vec)
+                format!("Upper: {layer:?}")
             }
             LcfMapUnitChunk::SaveTime(val) => format!("Save Time: {}", val.0),
             LcfMapUnitChunk::Unknown { id, bytes } => {

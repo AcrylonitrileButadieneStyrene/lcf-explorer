@@ -1,17 +1,17 @@
-use lcf::ldb::{
-    LcfDataBaseChunk,
+use lcf::raw::ldb::{
+    LcfDataBaseChunk, RawLcfDataBase,
     chipset::{ChipSet, ChipSetChunk},
 };
 
 pub fn update(
-    database: &lcf::ldb::LcfDataBase,
+    database: &RawLcfDataBase,
     builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
     for (index, chunk) in database.0.inner_vec.iter().enumerate() {
         let node = index as u64;
         match &chunk.data {
-            lcf::ldb::LcfDataBaseChunk::ChipSet(chipset) => {
+            LcfDataBaseChunk::ChipSet(chipset) => {
                 builder.dir(node, "Chipset");
                 update_chipset(chipset, builder, encoding, node);
                 builder.close_dir();
