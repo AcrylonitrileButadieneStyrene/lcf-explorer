@@ -1,17 +1,23 @@
-use lcf::raw::RawLcf;
+struct Instance {
+    name: String,
+    raw: lcf::raw::RawLcf,
+    converted: Result<lcf::Lcf, lcf::LcfReadError>,
+}
 
 pub struct App {
     selected: Option<usize>,
-    lcfs: Vec<(String, RawLcf)>,
+    instances: Vec<Instance>,
     encoding: crate::code_page::CodePage,
+    using_raw: bool,
 }
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
             selected: None,
-            lcfs: Vec::new(),
+            instances: Vec::new(),
             encoding: Default::default(),
+            using_raw: false,
         }
     }
 }
@@ -27,10 +33,13 @@ impl eframe::App for App {
                     {
                         let bytes = std::fs::read(&path).unwrap();
                         let mut cursor = std::io::Cursor::new(bytes);
-                        let lcf = RawLcf::read(&mut cursor).unwrap();
-                        self.lcfs
-                            .push((path.file_name().unwrap().to_str().unwrap().to_owned(), lcf));
-                        self.selected = Some(self.lcfs.len() - 1);
+                        let lcf = lcf::raw::RawLcf::read(&mut cursor).unwrap();
+                        self.instances.push(Instance {
+                            name: path.file_name().unwrap().to_str().unwrap().to_owned(),
+                            converted: lcf.clone().try_into(),
+                            raw: lcf,
+                        });
+                        self.selected = Some(self.instances.len() - 1);
                     }
                 }
 
@@ -41,13 +50,15 @@ impl eframe::App for App {
                         }
                     }
                 });
+
+                ui.toggle_value(&mut self.using_raw, "Raw");
             });
         });
 
-        if !self.lcfs.is_empty() {
+        if !self.instances.is_empty() {
             egui::TopBottomPanel::top("tab bar").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    for (index, (name, _)) in self.lcfs.iter().enumerate() {
+                    for (index, Instance { name, .. }) in self.instances.iter().enumerate() {
                         if ui
                             .radio(
                                 self.selected.map_or_default(|selected| selected == index),
@@ -64,31 +75,54 @@ impl eframe::App for App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(selected) = self.selected {
-                let (_, lcf) = &self.lcfs[selected];
+                let Instance { raw, converted, .. } = &self.instances[selected];
+
                 egui::ScrollArea::both().show(ui, |ui| {
                     egui_ltreeview::TreeView::new("tree".into()).show(ui, |mut builder| {
-                        match lcf {
-                            RawLcf::RawDataBase(database) => crate::views::database::update(
-                                database,
-                                &mut builder,
-                                self.encoding,
-                            ),
-                            RawLcf::RawMapTree(lcf_map_tree) => crate::views::map_tree::update(
-                                lcf_map_tree,
-                                &mut builder,
-                                self.encoding,
-                            ),
-                            RawLcf::RawMapUnit(lcf_map_unit) => crate::views::map_unit::update(
-                                lcf_map_unit,
-                                &mut builder,
-                                self.encoding,
-                            ),
-                            RawLcf::RawSaveData(lcf_save_data) => crate::views::save_data::update(
-                                lcf_save_data,
-                                &mut builder,
-                                self.encoding,
-                            ),
-                        };
+                        if self.using_raw {
+                            match raw {
+                                lcf::raw::RawLcf::RawDataBase(database) => {
+                                    crate::views::raw::database::update(
+                                        database,
+                                        &mut builder,
+                                        self.encoding,
+                                    )
+                                }
+                                lcf::raw::RawLcf::RawMapTree(map_tree) => {
+                                    crate::views::raw::map_tree::update(
+                                        map_tree,
+                                        &mut builder,
+                                        self.encoding,
+                                    )
+                                }
+                                lcf::raw::RawLcf::RawMapUnit(map_unit) => {
+                                    crate::views::raw::map_unit::update(
+                                        map_unit,
+                                        &mut builder,
+                                        self.encoding,
+                                    )
+                                }
+                                lcf::raw::RawLcf::RawSaveData(save_data) => {
+                                    crate::views::raw::save_data::update(
+                                        save_data,
+                                        &mut builder,
+                                        self.encoding,
+                                    )
+                                }
+                            };
+                        } else {
+                            match converted {
+                                Ok(lcf::Lcf::DataBase(_database)) => todo!(),
+                                Ok(lcf::Lcf::MapTree(_map_tree)) => todo!(),
+                                Ok(lcf::Lcf::MapUnit(map_unit)) => crate::views::map_unit::update(
+                                    map_unit,
+                                    &mut builder,
+                                    self.encoding,
+                                ),
+                                Ok(lcf::Lcf::SaveData(_save_data)) => todo!(),
+                                Err(_) => todo!(),
+                            };
+                        }
                     });
                 });
             } else {

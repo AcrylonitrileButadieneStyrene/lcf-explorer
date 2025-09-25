@@ -1,6 +1,6 @@
 use lcf::{
     helpers::{Array, Chunk, Number},
-    raw::lmt::{RawLcfMapTree, bgm::MapBGM, map::MapChunk, start::StartChunk},
+    raw::lmt::{RawLcfMapTree, bgm::MapBGMChunk, map::MapChunk, start::StartChunk},
 };
 
 pub fn update(
@@ -75,20 +75,20 @@ pub fn update_maps(
                     let node = node << 4;
                     for (index, chunk) in chunks.inner_vec.iter().enumerate() {
                         let label = match &chunk.data {
-                            MapBGM::FileName(bytes) => {
+                            MapBGMChunk::FileName(bytes) => {
                                 format!("File Name: {}", encoding.to_encoding().decode(bytes).0)
                             }
-                            MapBGM::FadeInTime(val) => format!("Fade-in Time: {}", val.0),
-                            MapBGM::Volume(val) => {
+                            MapBGMChunk::FadeInTime(val) => format!("Fade-in Time: {}", val.0),
+                            MapBGMChunk::Volume(val) => {
                                 format!("Volume: {}", val.0)
                             }
-                            MapBGM::Tempo(val) => {
+                            MapBGMChunk::Tempo(val) => {
                                 format!("Tempo: {}", val.0)
                             }
-                            MapBGM::Balance(val) => {
+                            MapBGMChunk::Balance(val) => {
                                 format!("Balance: {}", val.0)
                             }
-                            MapBGM::Unknown { id, bytes } => {
+                            MapBGMChunk::Unknown { id, bytes } => {
                                 format!("Field {}: {:?}", id.0, bytes)
                             }
                         };
@@ -102,6 +102,7 @@ pub fn update_maps(
                             format!("Name: {}", encoding.to_encoding().decode(bytes).0)
                         }
                         MapChunk::Parent(val) => format!("Parent: {}", val.0),
+                        MapChunk::Indentation(val) => format!("Indentation: {}", val.0),
                         MapChunk::Type(val) => format!("Type: {}", val.0),
                         MapChunk::HorizontalScrollBar(val) => {
                             format!("Horizontal Scroll Bar: {}", val.0)
@@ -109,10 +110,10 @@ pub fn update_maps(
                         MapChunk::VerticalScrollBar(val) => {
                             format!("Vertical Scroll Bar: {}", val.0)
                         }
-                        MapChunk::ExtractedNode(val) => format!("Extracted Node: {}", val.0),
+                        MapChunk::Expanded(val) => format!("Expanded: {}", val.0 != 0),
                         MapChunk::BGM(val) => format!("BGM: {}", val.0),
-                        MapChunk::Backdrop(val) => format!("Backdrop: {}", val.0),
-                        MapChunk::BackdropFile(bytes) => format!("Backdrop File: {:?}", bytes),
+                        MapChunk::Background(val) => format!("Background: {}", val.0),
+                        MapChunk::BackgroundFile(bytes) => format!("Background File: {:?}", bytes),
                         MapChunk::Teleport(val) => format!("Teleport: {}", val.0),
                         MapChunk::Escape(val) => format!("Escape: {}", val.0),
                         MapChunk::Save(val) => format!("Save: {}", val.0),

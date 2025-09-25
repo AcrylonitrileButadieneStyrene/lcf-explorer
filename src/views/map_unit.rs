@@ -1,241 +1,190 @@
-use lcf::raw::lmu::{
-    LcfMapUnitChunk, RawLcfMapUnit,
-    event::{
-        EventChunk, move_route::EventMoveRouteChunk, page::EventPageChunk,
-        trigger::EventTriggerChunk,
-    },
-};
+use lcf::enums::{AnimationType, Priority, Trigger};
 
 pub fn update(
-    map_unit: &RawLcfMapUnit,
+    map_unit: &lcf::lmu::LcfMapUnit,
     builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
-    for (index, chunk) in map_unit.0.inner_vec.iter().enumerate() {
-        let node = index as u64;
-        let label = match &chunk.data {
-            LcfMapUnitChunk::ChipSet(val) => format!("ChipSet: {}", val.0),
-            LcfMapUnitChunk::Width(val) => format!("Width: {}", val.0),
-            LcfMapUnitChunk::Height(val) => format!("Height: {}", val.0),
-            LcfMapUnitChunk::ScrollType(val) => format!(
-                "Scroll Type: {}",
-                match val.0 {
-                    0 => "No Loop",
-                    1 => "Vertical Loop Only",
-                    2 => "Horizontal Loop Only",
-                    3 => "Vertical and Horizontal Loop",
-                    _ => "Invalid",
-                }
+    map_unit
+        .chipset
+        .inspect(|chipset| builder.leaf(0, format!("ChipSet: {}", chipset)));
+    builder.leaf(1, format!("Width: {}", map_unit.width));
+    builder.leaf(2, format!("Height: {}", map_unit.height));
+    builder.leaf(
+        3,
+        format!(
+            "Scroll Type: {}",
+            match map_unit.scroll_type {
+                lcf::enums::ScrollType::None => "No Loop",
+                lcf::enums::ScrollType::Vertical => "Vertical Loop Only",
+                lcf::enums::ScrollType::Horizontal => "Horizontal Loop Only",
+                lcf::enums::ScrollType::Both => "Vertical and Horizontal Loop",
+            }
+        ),
+    );
+    if builder.dir(4, "Panorama") {
+        builder.leaf(5, format!("Enabled: {}", map_unit.panorama.enabled));
+        builder.leaf(
+            6,
+            format!(
+                "File: {}",
+                encoding
+                    .to_encoding()
+                    .decode(map_unit.panorama.file.as_deref().unwrap_or_default())
+                    .0
             ),
-            LcfMapUnitChunk::PanoramaEnabled(val) => {
-                format!("Panorama Enabled: {}", val.0 != 0)
-            }
-            LcfMapUnitChunk::PanoramaFile(bytes) => {
-                format!("Panorama File: {}", encoding.to_encoding().decode(bytes).0)
-            }
-            LcfMapUnitChunk::PanoramaHorizontalLoop(val) => {
-                format!("Panorama Horizontal Loop: {}", val.0 != 0)
-            }
-            LcfMapUnitChunk::PanoramaVerticalLoop(val) => {
-                format!("Panorama Vertical Loop: {}", val.0 != 0)
-            }
-            LcfMapUnitChunk::PanoramaHorizontalAutoScroll(val) => {
-                format!("Panorama Horizontal Auto Scroll: {}", val.0 != 0)
-            }
-            LcfMapUnitChunk::PanoramaHorizontalAutoScrollSpeed(val) => {
-                format!("Panorama Horizontal Auto Scroll Speed: {}", val.0)
-            }
-            LcfMapUnitChunk::PanoramaVerticalAutoScroll(val) => {
-                format!("Panorama Vertical Auto Scroll: {}", val.0 != 0)
-            }
-            LcfMapUnitChunk::PanoramaVerticalAutoScrollSpeed(val) => {
-                format!("Panorama Vertical Auto Scroll Speed: {}", val.0)
-            }
-            LcfMapUnitChunk::Events { chunks } => {
-                builder.dir(node, "Events");
-                let node = node << 4;
-                for (index, (id, events)) in chunks.into_iter().enumerate() {
-                    let node = node + index as u64;
-                    builder.dir(node, format!("Event {}", id.0));
-                    let node = node << 14;
-                    for (index, event) in events.iter().enumerate() {
-                        let node = node + index as u64;
-                        let label = match &event.data {
-                            EventChunk::Name(bytes) => {
-                                format!("Name: {}", encoding.to_encoding().decode(bytes).0)
+        );
+        if builder.dir(7, "Horizontal") {
+            builder.leaf(8, format!("Looping: {}", map_unit.panorama.horizontal_loop));
+            builder.leaf(
+                9,
+                format!("Auto Scroll: {}", map_unit.panorama.horizontal_auto_scroll),
+            );
+            builder.leaf(
+                10,
+                format!(
+                    "Auto Scroll Speed: {}",
+                    map_unit.panorama.horizontal_auto_scroll_speed
+                ),
+            );
+        }
+        builder.close_dir();
+        if builder.dir(11, "Vertical") {
+            builder.leaf(12, format!("Looping: {}", map_unit.panorama.vertical_loop));
+            builder.leaf(
+                13,
+                format!("Auto Scroll: {}", map_unit.panorama.vertical_auto_scroll),
+            );
+            builder.leaf(
+                14,
+                format!(
+                    "Auto Scroll Speed: {}",
+                    map_unit.panorama.vertical_auto_scroll_speed
+                ),
+            );
+        }
+        builder.close_dir();
+        builder.close_dir();
+        if builder.dir(15, "Events") {
+            for event in &map_unit.events {
+                let node = (event.id as u64) << 8;
+                if builder.dir(
+                    node,
+                    format!(
+                        "E{:04}: {}",
+                        event.id,
+                        encoding.to_encoding().decode(&event.name).0
+                    ),
+                ) {
+                    builder.leaf(node + 1, format!("X: {}", event.x));
+                    builder.leaf(node + 2, format!("Y: {}", event.y));
+                    if builder.dir(node + 3, "Pages") {
+                        let node = node << 2;
+                        for page in &event.pages {
+                            // TODO: trigger term
+
+                            if builder.dir(node + 2, "Graphic") {
+                                builder.leaf(
+                                    node + 3,
+                                    format!(
+                                        "File: {}",
+                                        encoding.to_encoding().decode(&page.graphic.file).0
+                                    ),
+                                );
+                                builder.leaf(node + 4, format!("Index: {}", page.graphic.index));
+                                builder.leaf(
+                                    node + 5,
+                                    format!("Direction: {}", page.graphic.direction),
+                                );
+                                builder
+                                    .leaf(node + 6, format!("Pattern: {}", page.graphic.pattern));
+                                builder.leaf(
+                                    node + 7,
+                                    format!("Transparent: {}", page.graphic.transparent),
+                                );
                             }
-                            EventChunk::PositionX(val) => format!("X: {}", val.0),
-                            EventChunk::PositionY(val) => format!("Y: {}", val.0),
-                            EventChunk::Pages { chunks } => {
-                                builder.dir(node, "Pages");
-                                let node = node << 7;
-                                for (index, (id, page)) in chunks.iter().enumerate() {
-                                    builder.dir(node, format!("Page {}", id.0));
-                                    let node = node << 8 + index as u64;
-                                    for (index, chunk) in page.inner_vec.iter().enumerate() {
-                                        let node = node + index as u64;
-                                        let label = match &chunk.data {
-                                            EventPageChunk::TriggerTerm(chunks) => {
-                                                builder.dir(node, "Trigger");
-                                                for (index, chunk) in
-                                                    chunks.inner_vec.iter().enumerate()
-                                                {
-                                                    let node = node << 8 + index as u64;
-                                                    let label = match &chunk.data {
-                                                        EventTriggerChunk::Unknown {
-                                                            id,
-                                                            bytes,
-                                                        } => format!("Field {}: {bytes:?}", id.0),
-                                                    };
-                                                    builder.leaf(node, label);
-                                                }
-                                                builder.close_dir();
-                                                continue;
-                                            }
-                                            EventPageChunk::GraphicFile(bytes) => format!(
-                                                "Graphic: {}",
-                                                encoding.to_encoding().decode(bytes).0
-                                            ),
-                                            EventPageChunk::GraphicIndex(val) => {
-                                                format!("Graphic Index: {}", val.0)
-                                            }
-                                            EventPageChunk::GraphicDirection(val) => format!(
-                                                "Graphic Direction: {}",
-                                                match val.0 {
-                                                    0 => "Up",
-                                                    1 => "Right",
-                                                    2 => "Down",
-                                                    3 => "Left",
-                                                    _ => "Unknown",
-                                                }
-                                            ),
-                                            EventPageChunk::GraphicTransparent(val) => {
-                                                format!("Graphic Transparent: {}", val.0 != 0)
-                                            }
-                                            EventPageChunk::MovementType(val) => format!(
-                                                "Movement Type: {}",
-                                                match val.0 {
-                                                    0 => "Fixed",
-                                                    1 => "Random",
-                                                    2 => "Vertical",
-                                                    3 => "Horizontal",
-                                                    4 => "Approach Player",
-                                                    5 => "Away from Player",
-                                                    6 => "Custom",
-                                                    _ => "Unknown",
-                                                }
-                                            ),
-                                            EventPageChunk::MovementFrequency(val) => {
-                                                format!("Movement Frequency: {}", val.0)
-                                            }
-                                            EventPageChunk::MovementRoute(chunks) => {
-                                                builder.dir(node, "Move Route");
-                                                for (index, chunk) in
-                                                    chunks.inner_vec.iter().enumerate()
-                                                {
-                                                    let node = node << 8 + index as u64;
-                                                    let label = match &chunk.data {
-                                                        EventMoveRouteChunk::Unknown {
-                                                            id,
-                                                            bytes,
-                                                        } => format!("Field {}: {bytes:?}", id.0),
-                                                    };
-                                                    builder.leaf(node, label);
-                                                }
-                                                builder.close_dir();
-                                                continue;
-                                            }
-                                            EventPageChunk::Trigger(val) => format!(
-                                                "Trigger: {}",
-                                                match val.0 {
-                                                    0 => "Action Button",
-                                                    1 => "Player Touch",
-                                                    2 => "Event Touch",
-                                                    3 => "Autorun",
-                                                    4 => "Parallel process",
-                                                    _ => "Unknown",
-                                                }
-                                            ),
-                                            EventPageChunk::Priority(val) => format!(
-                                                "Priority: {}",
-                                                match val.0 {
-                                                    0 => "Below Characters",
-                                                    1 => "Same as Characters",
-                                                    2 => "Above Characters",
-                                                    _ => "Unknown",
-                                                }
-                                            ),
-                                            EventPageChunk::PriorityForbidEventOverlap(val) => {
-                                                format!("Forbid Event Overlap: {}", val.0)
-                                            }
-                                            EventPageChunk::AnimationType(val) => format!(
-                                                "Animation Type: {}",
-                                                match val.0 {
-                                                    0 => "Standing Animation",
-                                                    1 => "Walking Animation",
-                                                    2 => "Direction Fix/Inanimated",
-                                                    3 => "Direction Fix/Animated",
-                                                    4 => "Fixed Graphic",
-                                                    5 => "Spin",
-                                                    _ => "Unknown",
-                                                }
-                                            ),
-                                            EventPageChunk::CommandsSize(val) => {
-                                                format!("Commands size: {}", val.0)
-                                            }
-                                            EventPageChunk::Commands(commands) => {
-                                                builder.dir(node, "Commands");
-                                                for (index, command) in commands.iter().enumerate()
-                                                {
-                                                    builder.leaf(
-                                                        node.unbounded_shl(8) + index as u64,
-                                                        format!(
-                                                            "{index}: {}{:?} {}",
-                                                            "\t".repeat(command.indent.0 as usize),
-                                                            command.instruction,
-                                                            encoding
-                                                                .to_encoding()
-                                                                .decode(&command.string)
-                                                                .0,
-                                                        ),
-                                                    );
-                                                }
-                                                builder.close_dir();
-                                                continue;
-                                            }
-                                            EventPageChunk::Unknown { id, bytes } => {
-                                                format!("Field {}: {bytes:?}", id.0)
-                                            }
-                                        };
-                                        builder.leaf(node, label);
+                            builder.close_dir();
+
+                            if builder.dir(node + 8, "Movement") {
+                                builder.leaf(node + 9, format!("Type: {}", page.movement.r#type));
+                                builder.leaf(
+                                    node + 10,
+                                    format!("Frequency: {}", page.movement.frequency),
+                                );
+                                builder.leaf(node + 11, format!("Speed: {}", page.movement.speed));
+                                // builder.leaf(node + 12, format!("Route: {}", page.movement.route));
+                            }
+                            builder.close_dir();
+
+                            builder.leaf(
+                                node + 13,
+                                format!(
+                                    "Trigger: {}",
+                                    match page.trigger {
+                                        Trigger::ActionButton => "Action Button",
+                                        Trigger::PlayerTouch => "Player Touch",
+                                        Trigger::EventTouch => "Event Touch",
+                                        Trigger::Autorun => "Autorun",
+                                        Trigger::Parallel => "Parallel process",
                                     }
-                                    builder.close_dir();
+                                ),
+                            );
+                            builder.leaf(
+                                node + 14,
+                                format!(
+                                    "Priority: {}",
+                                    match page.priority {
+                                        Priority::BelowCharacters => "Below Characters",
+                                        Priority::SameAsCharacters => "Same as Characters",
+                                        Priority::AboveCharacters => "Above Characters",
+                                    }
+                                ),
+                            );
+                            builder.leaf(
+                                node + 15,
+                                format!("Forbid Event Overlap: {}", page.forbid_event_overlap),
+                            );
+                            builder.leaf(
+                                node + 16,
+                                format!(
+                                    "Animation Type: {}",
+                                    match page.animation_type {
+                                        AnimationType::Standing => "Standing Animation",
+                                        AnimationType::Walking => "Walking Animation",
+                                        AnimationType::DirectionFixInanimated =>
+                                            "Direction Fix/Inanimated",
+                                        AnimationType::DirectionFixAnimated =>
+                                            "Direction Fix/Animated",
+                                        AnimationType::FixedGraphic => "Fixed Graphic",
+                                        AnimationType::Spin => "Spin",
+                                    }
+                                ),
+                            );
+                            if builder.dir(node + 17, "Commands") {
+                                let node = node << 16;
+                                for (index, command) in page.commands.iter().enumerate() {
+                                    builder.leaf(
+                                        node + index as u64,
+                                        format!(
+                                            "{index}: {}{:?} {}",
+                                            "\t".repeat(command.indent as usize),
+                                            command.instruction,
+                                            encoding.to_encoding().decode(&command.string).0,
+                                        ),
+                                    )
                                 }
-                                builder.close_dir();
-                                continue;
                             }
-                            EventChunk::Unknown { id, bytes } => {
-                                format!("Field {}: {bytes:?}", id.0)
-                            }
-                        };
-                        builder.leaf(node, label);
+                            builder.close_dir();
+                        }
                     }
                     builder.close_dir();
                 }
                 builder.close_dir();
-                continue;
             }
-            LcfMapUnitChunk::Lower(layer) => {
-                format!("Lower: {layer:?}")
-            }
-            LcfMapUnitChunk::Upper(layer) => {
-                format!("Upper: {layer:?}")
-            }
-            LcfMapUnitChunk::SaveTime(val) => format!("Save Time: {}", val.0),
-            LcfMapUnitChunk::Unknown { id, bytes } => {
-                format!("Chunk {}: {bytes:?}", id.0)
-            }
-        };
-        builder.leaf(node, label);
+        }
+        builder.close_dir();
+        builder.leaf(18, format!("Lower: {:?}", map_unit.lower));
+        builder.leaf(19, format!("Upper: {:?}", map_unit.upper));
+        builder.leaf(20, format!("Save Time: {}", map_unit.save_time));
     }
 }
