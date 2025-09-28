@@ -17,7 +17,7 @@ pub fn update(
                 builder.close_dir();
             }
             LcfDataBaseChunk::Unknown { id, .. } => {
-                builder.leaf(node, format!("Chunk {}", id.0));
+                builder.leaf(node, format!("Chunk {}", id));
             }
         }
     }
@@ -44,7 +44,7 @@ fn update_chipset(
                     format!("File: {}", encoding.to_encoding().decode(bytes).0)
                 }
                 ChipSetChunk::Unknown { id, bytes } => {
-                    format!("Field {}: [{:?}]", id.0, bytes)
+                    format!("Field {}: [{:?}]", id, bytes)
                 }
             };
             builder.leaf(node + index as u64, label);

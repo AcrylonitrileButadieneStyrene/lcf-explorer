@@ -32,7 +32,7 @@ pub fn update(
             StartChunk::AirshipX(val) => format!("AirshipX: {}", val.0),
             StartChunk::AirshipY(val) => format!("AirshipY: {}", val.0),
             StartChunk::Unknown { id, bytes } => {
-                format!("Field {}: [{:?}]", id.0, bytes)
+                format!("Field {}: [{:?}]", id, bytes)
             }
         };
         builder.leaf(node + 1 + index as u64, label);
@@ -89,7 +89,7 @@ pub fn update_maps(
                                 format!("Balance: {}", val.0)
                             }
                             MapBGMChunk::Unknown { id, bytes } => {
-                                format!("Field {}: {:?}", id.0, bytes)
+                                format!("Field {}: {:?}", id, bytes)
                             }
                         };
                         builder.leaf(node + index as u64, label)
@@ -124,7 +124,7 @@ pub fn update_maps(
                             format!("Enemy Appear Step: {}", val.0)
                         }
                         MapChunk::Unknown { id, bytes } => {
-                            format!("Field {}: {:?}", id.0, bytes)
+                            format!("Field {}: {:?}", id, bytes)
                         }
                         MapChunk::BGMData(_) | MapChunk::AreaRange { .. } => unreachable!(),
                     };

@@ -85,7 +85,7 @@ pub fn update(
                                                         EventPageConditionChunk::Unknown {
                                                             id,
                                                             bytes,
-                                                        } => format!("Field {}: {bytes:?}", id.0),
+                                                        } => format!("Field {}: {bytes:?}", id),
                                                     };
                                                     builder.leaf(node, label);
                                                 }
@@ -141,7 +141,7 @@ pub fn update(
                                                         EventMoveRouteChunk::Unknown {
                                                             id,
                                                             bytes,
-                                                        } => format!("Field {}: {bytes:?}", id.0),
+                                                        } => format!("Field {}: {bytes:?}", id),
                                                     };
                                                     builder.leaf(node, label);
                                                 }
@@ -211,7 +211,7 @@ pub fn update(
                                                 continue;
                                             }
                                             EventPageChunk::Unknown { id, bytes } => {
-                                                format!("Field {}: {bytes:?}", id.0)
+                                                format!("Field {}: {bytes:?}", id)
                                             }
                                         };
                                         builder.leaf(node, label);
@@ -222,7 +222,7 @@ pub fn update(
                                 continue;
                             }
                             EventChunk::Unknown { id, bytes } => {
-                                format!("Field {}: {bytes:?}", id.0)
+                                format!("Field {}: {bytes:?}", id)
                             }
                         };
                         builder.leaf(node, label);
@@ -240,7 +240,7 @@ pub fn update(
             }
             LcfMapUnitChunk::SaveTime(val) => format!("Save Time: {}", val.0),
             LcfMapUnitChunk::Unknown { id, bytes } => {
-                format!("Chunk {}: {bytes:?}", id.0)
+                format!("Chunk {}: {bytes:?}", id)
             }
         };
         builder.leaf(node, label);

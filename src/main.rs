@@ -7,7 +7,7 @@ mod views;
 fn main() {
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "My egui App",
+        "Lcf explorer",
         native_options,
         Box::new(|cc| Ok(Box::new(app::App::new(cc)))),
     )
