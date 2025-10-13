@@ -54,7 +54,7 @@ pub fn update(
             LcfMapUnitChunk::Events { chunks } => {
                 builder.dir(node, "Events");
                 let node = node << 4;
-                for (index, (id, events)) in chunks.into_iter().enumerate() {
+                for (index, (id, events)) in chunks.iter().enumerate() {
                     let node = node + index as u64;
                     builder.dir(node, format!("Event {}", id.0));
                     let node = node << 14;
@@ -71,7 +71,7 @@ pub fn update(
                                 let node = node << 7;
                                 for (index, (id, page)) in chunks.iter().enumerate() {
                                     builder.dir(node, format!("Page {}", id.0));
-                                    let node = node << 8 + index as u64;
+                                    let node = (node << 8) + index as u64;
                                     for (index, chunk) in page.inner_vec.iter().enumerate() {
                                         let node = node + index as u64;
                                         let label = match &chunk.data {
@@ -80,7 +80,7 @@ pub fn update(
                                                 for (index, chunk) in
                                                     chunks.inner_vec.iter().enumerate()
                                                 {
-                                                    let node = node << 8 + index as u64;
+                                                    let node = (node << 8) + index as u64;
                                                     let label = match &chunk.data {
                                                         EventPageConditionChunk::Flags(x) => {
                                                             format!("Flags: {}", x.0)
@@ -160,7 +160,7 @@ pub fn update(
                                                 for (index, chunk) in
                                                     chunks.inner_vec.iter().enumerate()
                                                 {
-                                                    let node = node << 8 + index as u64;
+                                                    let node = (node << 8) + index as u64;
                                                     let label = match &chunk.data {
                                                         EventMoveRouteChunk::CommandsSize(val) => {
                                                             format!("CommandsSize: {}", val.0)

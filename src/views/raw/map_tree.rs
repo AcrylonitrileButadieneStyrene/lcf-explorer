@@ -49,7 +49,7 @@ pub fn update_maps(
 ) {
     let node = 2 << 16;
     builder.dir(node, "Maps");
-    for (index, (id, chunks)) in maps.into_iter().enumerate() {
+    for (index, (id, chunks)) in maps.iter().enumerate() {
         let node = node + 1 + index as u64;
         builder.dir(node, format!("Map {}", id.0));
         let node = node << 8;

@@ -8,7 +8,7 @@ pub enum CodePage {
     Big5,
 }
 
-pub const ALL: &'static [CodePage] = &[
+pub const ALL: &[CodePage] = &[
     CodePage::Ascii,
     CodePage::Big5,
     CodePage::Cyrillic,

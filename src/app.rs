@@ -26,21 +26,20 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("title bar").show(ctx, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
-                if ui.button("Open").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
+                if ui.button("Open").clicked()
+                    && let Some(path) = rfd::FileDialog::new()
                         .add_filter("Lcf file", &["ldb", "lmt", "lmu", "lsd"])
                         .pick_file()
-                    {
-                        let bytes = std::fs::read(&path).unwrap();
-                        let mut cursor = std::io::Cursor::new(bytes);
-                        let lcf = lcf::raw::RawLcf::read(&mut cursor).unwrap();
-                        self.instances.push(Instance {
-                            name: path.file_name().unwrap().to_str().unwrap().to_owned(),
-                            converted: lcf.clone().try_into(),
-                            raw: lcf,
-                        });
-                        self.selected = Some(self.instances.len() - 1);
-                    }
+                {
+                    let bytes = std::fs::read(&path).unwrap();
+                    let mut cursor = std::io::Cursor::new(bytes);
+                    let lcf = lcf::raw::RawLcf::read(&mut cursor).unwrap();
+                    self.instances.push(Instance {
+                        name: path.file_name().unwrap().to_str().unwrap().to_owned(),
+                        converted: lcf.clone().try_into(),
+                        raw: lcf,
+                    });
+                    self.selected = Some(self.instances.len() - 1);
                 }
 
                 ui.menu_button("Encoding", |ui| {
@@ -78,34 +77,34 @@ impl eframe::App for App {
                 let Instance { raw, converted, .. } = &self.instances[selected];
 
                 egui::ScrollArea::both().show(ui, |ui| {
-                    egui_ltreeview::TreeView::new("tree".into()).show(ui, |mut builder| {
+                    egui_ltreeview::TreeView::new("tree".into()).show(ui, |builder| {
                         if self.using_raw {
                             match raw {
                                 lcf::raw::RawLcf::RawDataBase(database) => {
                                     crate::views::raw::database::update(
                                         database,
-                                        &mut builder,
+                                        builder,
                                         self.encoding,
                                     )
                                 }
                                 lcf::raw::RawLcf::RawMapTree(map_tree) => {
                                     crate::views::raw::map_tree::update(
                                         map_tree,
-                                        &mut builder,
+                                        builder,
                                         self.encoding,
                                     )
                                 }
                                 lcf::raw::RawLcf::RawMapUnit(map_unit) => {
                                     crate::views::raw::map_unit::update(
                                         map_unit,
-                                        &mut builder,
+                                        builder,
                                         self.encoding,
                                     )
                                 }
                                 lcf::raw::RawLcf::RawSaveData(save_data) => {
                                     crate::views::raw::save_data::update(
                                         save_data,
-                                        &mut builder,
+                                        builder,
                                         self.encoding,
                                     )
                                 }
@@ -114,11 +113,9 @@ impl eframe::App for App {
                             match converted {
                                 Ok(lcf::Lcf::DataBase(_database)) => todo!(),
                                 Ok(lcf::Lcf::MapTree(_map_tree)) => todo!(),
-                                Ok(lcf::Lcf::MapUnit(map_unit)) => crate::views::map_unit::update(
-                                    map_unit,
-                                    &mut builder,
-                                    self.encoding,
-                                ),
+                                Ok(lcf::Lcf::MapUnit(map_unit)) => {
+                                    crate::views::map_unit::update(map_unit, builder, self.encoding)
+                                }
                                 Ok(lcf::Lcf::SaveData(_save_data)) => todo!(),
                                 Err(_) => todo!(),
                             };

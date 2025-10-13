@@ -2,6 +2,7 @@
 name = "lcf-explorer"
 version = "0.2.0"
 edition = "2024"
+publish = false
 
 [dependencies]
 eframe = "0.32.0"
