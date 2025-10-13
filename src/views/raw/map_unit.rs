@@ -82,6 +82,30 @@ pub fn update(
                                                 {
                                                     let node = node << 8 + index as u64;
                                                     let label = match &chunk.data {
+                                                        EventPageConditionChunk::Flags(x) => {
+                                                            format!("Flags: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::SwitchA(x) => {
+                                                            format!("Switch A: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::SwitchB(x) => {
+                                                            format!("Switch B: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::Variable(x) => {
+                                                            format!("Variable: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::Value(x) => {
+                                                            format!("Value: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::Item(x) => {
+                                                            format!("Item: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::Actor(x) => {
+                                                            format!("Actor: {}", x.0)
+                                                        }
+                                                        EventPageConditionChunk::Timer(x) => {
+                                                            format!("Timer: {}", x.0)
+                                                        }
                                                         EventPageConditionChunk::Unknown {
                                                             id,
                                                             bytes,
@@ -138,6 +162,18 @@ pub fn update(
                                                 {
                                                     let node = node << 8 + index as u64;
                                                     let label = match &chunk.data {
+                                                        EventMoveRouteChunk::CommandsSize(val) => {
+                                                            format!("CommandsSize: {}", val.0)
+                                                        }
+                                                        EventMoveRouteChunk::Commands(val) => {
+                                                            format!("Commands: {:?}", val)
+                                                        }
+                                                        EventMoveRouteChunk::Repeat(val) => {
+                                                            format!("Repeat: {}", val.0)
+                                                        }
+                                                        EventMoveRouteChunk::Skippable(val) => {
+                                                            format!("Skippable: {}", val.0)
+                                                        }
                                                         EventMoveRouteChunk::Unknown {
                                                             id,
                                                             bytes,

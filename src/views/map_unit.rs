@@ -66,8 +66,8 @@ pub fn update(
         builder.close_dir();
         builder.close_dir();
         if builder.dir(15, "Events") {
-            for event in &map_unit.events {
-                let node = (event.id as u64) << 8;
+            for (index, event) in map_unit.events.iter().enumerate() {
+                let node = (index as u64 + 1) << 8;
                 if builder.dir(
                     node,
                     format!(
@@ -82,48 +82,94 @@ pub fn update(
                         for (index, page) in event.pages.iter().enumerate() {
                             let node = (node + 4 + index as u64) << 8;
                             if builder.dir(node, format!("Page {}", index + 1)) {
-                                // TODO: trigger term
-
-                                if builder.dir(node + 2, "Graphic") {
+                                if builder.dir(node + 1, "Condition") {
+                                    builder.leaf(
+                                        node + 2,
+                                        format!(
+                                            "Switch A: {} ({})",
+                                            page.condition.switch_a.0, page.condition.switch_a.1
+                                        ),
+                                    );
                                     builder.leaf(
                                         node + 3,
+                                        format!(
+                                            "Switch B: {} ({})",
+                                            page.condition.switch_b.0, page.condition.switch_b.1
+                                        ),
+                                    );
+                                    builder.leaf(
+                                        node + 4,
+                                        format!(
+                                            "Variable: {} ({})",
+                                            page.condition.variable.0, page.condition.variable.1
+                                        ),
+                                    );
+                                    builder
+                                        .leaf(node + 5, format!("Value: {}", page.condition.value));
+                                    builder.leaf(
+                                        node + 6,
+                                        format!(
+                                            "Item: {} ({})",
+                                            page.condition.item.0, page.condition.item.1
+                                        ),
+                                    );
+                                    builder.leaf(
+                                        node + 7,
+                                        format!(
+                                            "Actor: {} ({})",
+                                            page.condition.actor.0, page.condition.actor.1
+                                        ),
+                                    );
+                                    builder.leaf(
+                                        node + 8,
+                                        format!(
+                                            "Timer: {} ({})",
+                                            page.condition.timer.0, page.condition.timer.1
+                                        ),
+                                    );
+                                }
+                                builder.close_dir();
+
+                                if builder.dir(node + 9, "Graphic") {
+                                    builder.leaf(
+                                        node + 10,
                                         format!(
                                             "File: {}",
                                             encoding.to_encoding().decode(&page.graphic.file).0
                                         ),
                                     );
                                     builder
-                                        .leaf(node + 4, format!("Index: {}", page.graphic.index));
+                                        .leaf(node + 11, format!("Index: {}", page.graphic.index));
                                     builder.leaf(
-                                        node + 5,
+                                        node + 12,
                                         format!("Direction: {}", page.graphic.direction),
                                     );
                                     builder.leaf(
-                                        node + 6,
+                                        node + 13,
                                         format!("Pattern: {}", page.graphic.pattern),
                                     );
                                     builder.leaf(
-                                        node + 7,
+                                        node + 14,
                                         format!("Transparent: {}", page.graphic.transparent),
                                     );
                                 }
                                 builder.close_dir();
 
-                                if builder.dir(node + 8, "Movement") {
+                                if builder.dir(node + 15, "Movement") {
                                     builder
-                                        .leaf(node + 9, format!("Type: {}", page.movement.r#type));
+                                        .leaf(node + 16, format!("Type: {}", page.movement.r#type));
                                     builder.leaf(
-                                        node + 10,
+                                        node + 17,
                                         format!("Frequency: {}", page.movement.frequency),
                                     );
                                     builder
-                                        .leaf(node + 11, format!("Speed: {}", page.movement.speed));
-                                    // builder.leaf(node + 12, format!("Route: {}", page.movement.route));
+                                        .leaf(node + 18, format!("Speed: {}", page.movement.speed));
+                                    // builder.leaf(node + 19, format!("Route: {}", page.movement.route));
                                 }
                                 builder.close_dir();
 
                                 builder.leaf(
-                                    node + 13,
+                                    node + 20,
                                     format!(
                                         "Trigger: {}",
                                         match page.trigger {
@@ -136,7 +182,7 @@ pub fn update(
                                     ),
                                 );
                                 builder.leaf(
-                                    node + 14,
+                                    node + 21,
                                     format!(
                                         "Priority: {}",
                                         match page.priority {
@@ -147,11 +193,11 @@ pub fn update(
                                     ),
                                 );
                                 builder.leaf(
-                                    node + 15,
+                                    node + 22,
                                     format!("Forbid Event Overlap: {}", page.forbid_event_overlap),
                                 );
                                 builder.leaf(
-                                    node + 16,
+                                    node + 23,
                                     format!(
                                         "Animation Type: {}",
                                         match page.animation_type {
@@ -166,7 +212,7 @@ pub fn update(
                                         }
                                     ),
                                 );
-                                if builder.dir(node + 17, "Commands") {
+                                if builder.dir(node + 24, "Commands") {
                                     let node = node << 16;
                                     for (index, command) in page.commands.iter().enumerate() {
                                         builder.leaf(
