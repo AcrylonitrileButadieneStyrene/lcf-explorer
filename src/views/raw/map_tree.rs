@@ -39,7 +39,7 @@ pub fn update(
     }
     builder.close_dir();
 
-    update_maps(&map_tree.maps, builder, encoding);
+    update_maps(&map_tree.maps.inner_vec, builder, encoding);
 }
 
 pub fn update_maps(

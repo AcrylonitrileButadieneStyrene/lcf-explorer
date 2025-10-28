@@ -111,13 +111,19 @@ impl eframe::App for App {
                             };
                         } else {
                             match converted {
-                                Ok(lcf::Lcf::DataBase(_database)) => todo!(),
+                                Ok(lcf::Lcf::DataBase(database)) => {
+                                    crate::views::data_base::update(
+                                        database,
+                                        builder,
+                                        self.encoding,
+                                    );
+                                }
                                 Ok(lcf::Lcf::MapTree(_map_tree)) => todo!(),
                                 Ok(lcf::Lcf::MapUnit(map_unit)) => {
                                     crate::views::map_unit::update(map_unit, builder, self.encoding)
                                 }
                                 Ok(lcf::Lcf::SaveData(_save_data)) => todo!(),
-                                Err(_) => todo!(),
+                                Err(err) => builder.leaf(0, format!("An error occurred: {err:?}")),
                             };
                         }
                     });

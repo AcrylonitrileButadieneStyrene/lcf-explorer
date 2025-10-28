@@ -51,14 +51,14 @@ pub fn update(
             LcfMapUnitChunk::PanoramaVerticalAutoScrollSpeed(val) => {
                 format!("Panorama Vertical Auto Scroll Speed: {}", val.0)
             }
-            LcfMapUnitChunk::Events { chunks } => {
+            LcfMapUnitChunk::Events(chunks) => {
                 builder.dir(node, "Events");
                 let node = node << 4;
-                for (index, (id, events)) in chunks.iter().enumerate() {
+                for (index, (id, chunks)) in chunks.inner_vec.iter().enumerate() {
                     let node = node + index as u64;
                     builder.dir(node, format!("Event {}", id.0));
                     let node = node << 14;
-                    for (index, event) in events.iter().enumerate() {
+                    for (index, event) in chunks.iter().enumerate() {
                         let node = node + index as u64;
                         let label = match &event.data {
                             EventChunk::Name(bytes) => {
@@ -66,13 +66,13 @@ pub fn update(
                             }
                             EventChunk::PositionX(val) => format!("X: {}", val.0),
                             EventChunk::PositionY(val) => format!("Y: {}", val.0),
-                            EventChunk::Pages { chunks } => {
+                            EventChunk::Pages(chunks) => {
                                 builder.dir(node, "Pages");
                                 let node = node << 7;
-                                for (index, (id, page)) in chunks.iter().enumerate() {
+                                for (index, (id, chunks)) in chunks.inner_vec.iter().enumerate() {
                                     builder.dir(node, format!("Page {}", id.0));
                                     let node = (node << 8) + index as u64;
-                                    for (index, chunk) in page.inner_vec.iter().enumerate() {
+                                    for (index, chunk) in chunks.inner_vec.iter().enumerate() {
                                         let node = node + index as u64;
                                         let label = match &chunk.data {
                                             EventPageChunk::Condition(chunks) => {
@@ -231,7 +231,7 @@ pub fn update(
                                                     commands.0.iter().enumerate()
                                                 {
                                                     builder.leaf(
-                                                        node.unbounded_shl(8) + index as u64,
+                                                        (node << 8) + index as u64,
                                                         format!(
                                                             "{index}: {}{:?} {}",
                                                             "\t".repeat(command.indent as usize),
