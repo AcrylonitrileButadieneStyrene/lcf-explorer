@@ -60,7 +60,19 @@ pub fn update(
             }
             LcfDataBaseChunk::Terms(chunks) => {
                 if builder.dir(node, "Terms") {
-                    draw_chunks(node, &chunks, builder);
+                    let node = node << 16;
+                    builder.leaf(node, format!("Null terminated: {}", chunks.null_terminated));
+
+                    for (index, chunk) in chunks.inner_vec.iter().enumerate() {
+                        builder.leaf(
+                            node + 1 + index as u64,
+                            format!(
+                                "{:?}: {}",
+                                chunk.id,
+                                encoding.to_encoding().decode(&chunk.bytes).0
+                            ),
+                        );
+                    }
                 }
                 builder.close_dir();
             }
@@ -147,8 +159,8 @@ pub fn update(
                                         }
                                         CommonEventChunk::Trigger(val) => format!(
                                             "Trigger: {}",
-                                            Trigger::from_repr(val.0).map_or_else(
-                                                || val.0.to_string(),
+                                            Trigger::try_from(val.0).map_or_else(
+                                                |_| val.0.to_string(),
                                                 |repr| {
                                                     match repr {
                                                         Trigger::ActionButton => "Action Button",

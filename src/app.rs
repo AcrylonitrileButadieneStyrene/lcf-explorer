@@ -34,6 +34,30 @@ impl eframe::App for App {
                     let bytes = std::fs::read(&path).unwrap();
                     let mut cursor = std::io::Cursor::new(bytes);
                     let lcf = lcf::raw::RawLcf::read(&mut cursor).unwrap();
+                    match &lcf {
+                        lcf::raw::RawLcf::RawDataBase(db) => {
+                            let items = &db.0.inner_vec;
+                            let terms = items
+                                .iter()
+                                .find_map(|item| match &item.data {
+                                    lcf::raw::ldb::LcfDataBaseChunk::States(x) => Some(x),
+                                    _ => None,
+                                })
+                                .unwrap();
+                            terms.inner_vec.iter().for_each(|chunk| match &chunk.data {
+                                lcf::helpers::UnknownChunk::Unknown { id, bytes }
+                                    if *id == 51 || *id == 52 || *id == 53 =>
+                                {
+                                    println!(
+                                        "{id}: {}",
+                                        self.encoding.to_encoding().decode(&bytes).0
+                                    );
+                                }
+                                _ => (),
+                            });
+                        }
+                        _ => (),
+                    };
                     self.instances.push(Instance {
                         name: path.file_name().unwrap().to_str().unwrap().to_owned(),
                         converted: lcf.clone().try_into(),
