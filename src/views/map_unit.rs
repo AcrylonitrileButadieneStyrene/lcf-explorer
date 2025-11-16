@@ -1,13 +1,14 @@
-use lcf::enums::{AnimationType, Priority, Trigger};
+use lcf::{
+    enums::{AnimationType, Priority, Trigger},
+    lmu::PanoramaOptions,
+};
 
 pub fn update(
     map_unit: &lcf::lmu::LcfMapUnit,
     builder: &mut egui_ltreeview::TreeViewBuilder<'_, u64>,
     encoding: crate::code_page::CodePage,
 ) {
-    map_unit
-        .chipset
-        .inspect(|chipset| builder.leaf(0, format!("ChipSet: {}", chipset)));
+    builder.leaf(0, format!("ChipSet: {}", map_unit.chipset));
     builder.leaf(1, format!("Width: {}", map_unit.width));
     builder.leaf(2, format!("Height: {}", map_unit.height));
     builder.leaf(
@@ -35,33 +36,27 @@ pub fn update(
             ),
         );
         if builder.dir(7, "Horizontal") {
-            builder.leaf(8, format!("Looping: {}", map_unit.panorama.horizontal_loop));
-            builder.leaf(
-                9,
-                format!("Auto Scroll: {}", map_unit.panorama.horizontal_auto_scroll),
-            );
-            builder.leaf(
-                10,
-                format!(
-                    "Auto Scroll Speed: {}",
-                    map_unit.panorama.horizontal_auto_scroll_speed
-                ),
-            );
+            let (looping, autoscroll, speed) = match map_unit.panorama.horizontal {
+                PanoramaOptions::NoLoop => (false, false, 0),
+                PanoramaOptions::NoAutoscroll => (true, false, 0),
+                PanoramaOptions::Autoscroll(x) => (true, true, x),
+            };
+
+            builder.leaf(8, format!("Looping: {}", looping));
+            builder.leaf(9, format!("Auto Scroll: {}", autoscroll));
+            builder.leaf(10, format!("Auto Scroll Speed: {}", speed));
         }
         builder.close_dir();
         if builder.dir(11, "Vertical") {
-            builder.leaf(12, format!("Looping: {}", map_unit.panorama.vertical_loop));
-            builder.leaf(
-                13,
-                format!("Auto Scroll: {}", map_unit.panorama.vertical_auto_scroll),
-            );
-            builder.leaf(
-                14,
-                format!(
-                    "Auto Scroll Speed: {}",
-                    map_unit.panorama.vertical_auto_scroll_speed
-                ),
-            );
+            let (looping, autoscroll, speed) = match map_unit.panorama.vertical {
+                PanoramaOptions::NoLoop => (false, false, 0),
+                PanoramaOptions::NoAutoscroll => (true, false, 0),
+                PanoramaOptions::Autoscroll(x) => (true, true, x),
+            };
+
+            builder.leaf(8, format!("Looping: {}", looping));
+            builder.leaf(9, format!("Auto Scroll: {}", autoscroll));
+            builder.leaf(10, format!("Auto Scroll Speed: {}", speed));
         }
         builder.close_dir();
         builder.close_dir();
